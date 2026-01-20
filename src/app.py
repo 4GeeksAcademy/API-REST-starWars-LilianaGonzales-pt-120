@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User, Character, Vehicle, user_character
+from models import db, User, Character, Vehicle, Planet, user_character, user_planet
 # from models import Person
 
 app = Flask(__name__)
@@ -80,7 +80,7 @@ def get_users():
 def get_user(id):
     user = db.session.get(User, id)
     print(user.to_dict())
-    return jsonify(user.to_dict()), 200
+    return jsonify(user.to_dict_all_data()), 200
 
 
 @app.route('/users', methods=["POST"])
@@ -95,6 +95,15 @@ def create_user():
 
 
 # character
+
+@app.route('/characters', methods=["GET"])
+def get_characters():
+    characters = list(db.session.execute(db.select(Character)).scalars())
+    print(characters)
+    result = [character.to_dict() for character in characters]
+    print(result)
+    return jsonify(result)
+
 
 @app.route('/characters/<int:id>', methods=['GET'])
 def get_character(id):
@@ -113,6 +122,33 @@ def create_character():
         height=data.get('height'))
     print(character)
     return jsonify(character.to_dict())
+
+# planets
+
+@app.route('/planets', methods=["GET"])
+def get_planets():
+    planets = list(db.session.execute(db.select(Planet)).scalars())
+    print(planets)
+    result = [planet.to_dict() for planet in planets]
+    print(result)
+    return jsonify(result)
+
+
+@app.route('/planets/<int:id>', methods=['GET'])
+def get_planet(id):
+    planet = db.session.get(Planet, id)
+    return jsonify(planet.to_dict()), 200
+
+
+@app.route('/planets', methods=["POST"])
+def create_planet():
+    data = request.get_json()
+    planet = Planet.create(
+        name=data.get('name'),
+        climate=data.get('climate'),
+        population=data.get('population'))
+    print(planet)
+    return jsonify(planet.to_dict())
 
 # vehicles
 
@@ -134,9 +170,7 @@ def create_vehicle():
  # user_character
 
 
-# @app.route('/users/<int:user_id>/characters/<int:character_id>', methods=["POST"])
 @app.route('/users_characters', methods=["POST"])
-# def add_user_character(user_id, character_id):
 def add_user_character():
     data = request.get_json()
     print(data)
@@ -146,10 +180,41 @@ def add_user_character():
         character_id=data.get('character_id'),
         favorite=data.get('favorite')
     )
-    db.session.add(userCharacter)
+    db.session.execute(userCharacter)
     db.session.commit()
     print(userCharacter)
     return 'ok', 200
+
+@app.route('/users_planets', methods=["POST"])
+def add_user_planet():
+    data = request.get_json()
+    print(data)
+    userPlanet = user_planet.insert().values(
+        user_id=data.get('user_id'),
+        planet_id=data.get('planet_id'),
+        favorite=data.get('favorite')
+    )
+    db.session.execute(userPlanet)
+    db.session.commit()
+    print(userPlanet)
+    return 'ok', 200
+
+# @app.route('/characters/favorite/<int:user_id>', methods=["GET"])
+# def get_user_character(user_id):
+    # query = user_character.select().where(
+    #     user_character.c.user_id == user_id,
+
+    #    user_character.c.favorite == True
+    # )
+    # result = db.session.execute(query).mappings().all()
+    # print(type.result)
+    # return jsonify(result)
+
+
+
+
+
+
 
 # def add_character_to_user(user_id, character_id):
 #     favorite = request.json.get("favorite", False)

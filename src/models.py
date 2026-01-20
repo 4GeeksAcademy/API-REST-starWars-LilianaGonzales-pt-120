@@ -81,13 +81,15 @@ class User(db.Model):
             'username': self.username,
             'email': self.email
         }
-    
+
     def to_dict_all_data(self):
         return {
             'id': self.id,
             'username': self.username,
             'email': self.email,
-            'characteres':[character.to_dict() for character in self.characteres]
+            'characteres': [character.to_dict_all_data() for character in self.characteres],
+            'planets': [planet.to_dict() for planet in self.planets]
+            #'characteres': [character.to_dict() for character in self.characteres]
         }
 
 
@@ -122,14 +124,14 @@ class Character (db.Model):
             'gender': self.gender,
             'height': self.height
         }
-    
+
     def to_dict_all_data(self):
         return {
             'id': self.id,
             'name': self.name,
             'gender': self.gender,
             'height': self.height,
-            'list_vehicle':[vehicle.to_dict() for vehicle in self.list_vehicle]
+            'list_vehicle': [vehicle.to_dict() for vehicle in self.list_vehicle]
         }
 
 
@@ -145,6 +147,21 @@ class Planet (db.Model):
 
     users: Mapped[List["User"]] = relationship(
         back_populates="planets", secondary=user_planet)
+
+    @classmethod
+    def create(self, name, climate, population):
+        planet = self(name=name, climate=climate, population=population)
+        db.session.add(planet)
+        db.session.commit()
+        return planet
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'climate': self.climate,
+            'population': self.population
+        }
 
 
 class Vehicle (db.Model):
@@ -164,7 +181,7 @@ class Vehicle (db.Model):
         back_populates="list_vehicle")
     users: Mapped[List["User"]] = relationship(
         back_populates="vehicles", secondary=user_vehicle)
-    
+
     def to_dict(self):
         return {
             'id': self.id,
